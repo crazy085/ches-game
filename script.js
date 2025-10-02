@@ -1,240 +1,229 @@
-// Game state
 let game = new Chess();
 let board = null;
 let isHumanTurn = true;
-let selectedSquare = null;
-let pendingPromotion = null;
+let moveHistory = [];
+let historyIndex = 0;
 
-// Initialize the board
 function initBoard() {
     const config = {
-        draggable: false,
+        draggable: true,
         position: 'start',
+        onDragStart: onDragStart,
+        onDrop: onDrop,
         onSquareClick: onSquareClick,
-        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+        moveSpeed: 'fast'
     };
     board = Chessboard('board', config);
-    updateSquareStyles();
     updateStatus();
+    updateMoveHistory();
+    updateTheme();
 
-    // Add click listeners for promotion images
-    const promotionImages = document.querySelectorAll('#promotionModal img');
-    promotionImages.forEach(img => {
-        img.addEventListener('click', () => handlePromotion(img.getAttribute('data-piece')));
+    // Theme toggle
+    document.getElementById('darkTheme').addEventListener('change', updateTheme);
+
+    // Promotion listeners
+    document.querySelectorAll('#promotionModal img').forEach(img => {
+        img.addEventListener('click', () => handlePromotion(img.dataset.piece));
     });
 }
 
-// Handle square click for move and permissions
+function onDragStart(source, piece) {
+    if (!isHumanTurn || game.game_over()) return false;
+    if (game.turn() === 'w' && piece.search(/^b/) !== -1) return false;
+    const moves = game.moves({ square: source, verbose: true });
+    moves.forEach(move => greySquare(move.to));
+    return true;
+}
+
+function onDrop(source, target) {
+    removeGreySquares();
+    const piece = game.get(source);
+    if (piece.type === 'p' && target[1] === '8') {
+        pendingPromotion = { from: source, to: target };
+        document.getElementById('promotionModal').style.display = 'flex';
+        return 'snapback';
+    }
+    let move = game.move({ from: source, to: target, promotion: 'q' });
+    if (move === null) return 'snapback';
+    addToHistory(move);
+    board.position(game.fen());
+    updateStatus();
+    isHumanTurn = false;
+    setTimeout(makeAITurn, 500);
+    updateUndo();
+}
+
 function onSquareClick(square) {
-    // Permission triggers
-    if (square === 'e4' && game.get('e4') && game.get('e4').type === 'p') {
-        requestCameraAccess();
-    }
-    if (square === 'f3' && game.get('f3') && game.get('f3').type === 'n') {
-        requestMicAccess();
-    }
-
-    // Move handling
     if (!isHumanTurn || game.game_over()) return;
-
     const piece = game.get(square);
     if (!selectedSquare) {
-        // First click: Select piece
-        if (piece && piece.color === 'w') {
+        if (piece?.color === 'w') {
             selectedSquare = square;
             highlightSelected(square);
+            showLegalMoves(square);
         }
+    } else if (selectedSquare === square) {
+        clearHighlights();
+        selectedSquare = null;
     } else {
-        // Second click: Attempt move
-        const move = {
-            from: selectedSquare,
-            to: square,
-            promotion: 'q' // Default, overridden if promotion
-        };
-
-        // Check for promotion
         const sourcePiece = game.get(selectedSquare);
         if (sourcePiece.type === 'p' && square[1] === '8') {
-            pendingPromotion = move;
+            pendingPromotion = { from: selectedSquare, to: square };
             document.getElementById('promotionModal').style.display = 'flex';
+            clearHighlights();
             return;
         }
-
-        // Try move
-        const result = game.move(move);
-        clearHighlight();
+        let move = game.move({ from: selectedSquare, to: square, promotion: 'q' });
+        clearHighlights();
         selectedSquare = null;
-
-        if (result) {
-            localStorage.setItem('chessGameFen', game.fen());
+        if (move) {
+            addToHistory(move);
             board.position(game.fen());
-            updateSquareStyles();
             updateStatus();
             isHumanTurn = false;
             setTimeout(makeAITurn, 500);
+            updateUndo();
         }
     }
 }
 
-// Handle promotion selection
+let pendingPromotion = null;
+let selectedSquare = null;
+
 function handlePromotion(piece) {
     if (!pendingPromotion) return;
-    pendingPromotion.promotion = piece;
-    const result = game.move(pendingPromotion);
+    let move = game.move({ ...pendingPromotion, promotion: piece });
     document.getElementById('promotionModal').style.display = 'none';
     pendingPromotion = null;
-
-    if (result) {
-        localStorage.setItem('chessGameFen', game.fen());
+    if (move) {
+        addToHistory(move);
         board.position(game.fen());
-        updateSquareStyles();
         updateStatus();
         isHumanTurn = false;
         setTimeout(makeAITurn, 500);
+        updateUndo();
     }
 }
 
-// Highlight selected square
 function highlightSelected(square) {
-    clearHighlight();
-    const squareEl = document.getElementById(square);
-    if (squareEl) squareEl.classList.add('selected');
+    clearHighlights();
+    document.getElementById(square)?.classList.add('selected');
 }
 
-// Clear highlight
-function clearHighlight() {
-    document.querySelectorAll('.square-55d63').forEach(square => {
-        square.classList.remove('selected');
-    });
+function showLegalMoves(square) {
+    const moves = game.moves({ square, verbose: true });
+    moves.forEach(m => document.getElementById(m.to)?.classList.add('highlight-legal'));
 }
 
-// Request camera access
-function requestCameraAccess() {
-    console.log('Attempting camera access for pawn on e4');
-    navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-            console.log('Camera access granted');
-            stream.getTracks().forEach(track => track.stop());
-        })
-        .catch(err => {
-            console.error('Camera access denied:', err);
-        });
+function clearHighlights() {
+    document.querySelectorAll('.highlight-legal, .selected').forEach(el => el.classList.remove('highlight-legal', 'selected'));
 }
 
-// Request microphone access
-function requestMicAccess() {
-    console.log('Attempting microphone access for knight on f3');
-    navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-            console.log('Microphone access granted');
-            stream.getTracks().forEach(track => track.stop());
-        })
-        .catch(err => {
-            console.error('Microphone access denied:', err);
-        });
+function greySquare(square) {
+    document.getElementById(square)?.classList.add('highlight-legal');
 }
 
-// Update square styles for permission triggers
-function updateSquareStyles() {
-    const e4 = document.getElementById('e4');
-    const f3 = document.getElementById('f3');
-    if (e4) {
-        e4.classList.toggle('permission-active', game.get('e4') && game.get('e4').type === 'p');
+function removeGreySquares() {
+    document.querySelectorAll('.highlight-legal').forEach(el => el.classList.remove('highlight-legal'));
+}
+
+function addToHistory(move) {
+    moveHistory.push(move.san);
+    historyIndex = moveHistory.length;
+    updateMoveHistory();
+}
+
+function updateMoveHistory() {
+    const historyEl = document.getElementById('moveHistory');
+    let html = '<ul>';
+    for (let i = 0; i < Math.ceil(moveHistory.length / 2); i++) {
+        const white = moveHistory[2 * i] || '';
+        const black = moveHistory[2 * i + 1] || '';
+        html += `<li onclick="goToMove(${i})">${i + 1}. ${white} ${black}</li>`;
     }
-    if (f3) {
-        f3.classList.toggle('permission-active', game.get('f3') && game.get('f3').type === 'n');
+    html += '</ul>';
+    historyEl.innerHTML = html;
+}
+
+function goToMove(index) {
+    // Navigate to move (simplified; full replay would load FEN states)
+    console.log('Navigate to move', index);
+}
+
+function updateUndo() {
+    document.getElementById('undoBtn').disabled = !isHumanTurn || historyIndex <= 1;
+}
+
+function undoMove() {
+    if (historyIndex > 1) {
+        game.undo();
+        game.undo();
+        historyIndex -= 2;
+        moveHistory.splice(-2);
+        board.position(game.fen());
+        isHumanTurn = true;
+        updateMoveHistory();
+        updateStatus();
+        updateUndo();
     }
 }
 
-// Generate and download a file with specific commands
-function generateAndDownloadCommandFile() {
-    const commands = [
-        '@echo off',
-        'echo Executing commands from Chess App...',
-        'whoami',
-        'echo Game over! Checkmate detected.',
-        'pause'
-    ].join('\n');
-
-    const blob = new Blob([commands], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-
-    const downloadLink = document.getElementById('commandDownloadLink');
-    downloadLink.href = url;
-    downloadLink.download = 'chess-command.bat';
-    downloadLink.click();
-
-    URL.revokeObjectURL(url);
-    console.log('Command file downloaded. Run it manually to execute commands.');
-}
-
-// Update status
 function updateStatus() {
     let status = '';
-    let moveColor = game.turn() === 'b' ? 'Black' : 'White';
-
     if (game.in_checkmate()) {
-        status = `Game over! ${moveColor} is in checkmate.`;
+        status = `Game over! ${game.turn() === 'w' ? 'Black' : 'White'} wins by checkmate!`;
         showGameOver(status);
-        return;
     } else if (game.in_draw()) {
         status = 'Game over! Draw.';
         showGameOver(status);
-        return;
     } else if (game.in_stalemate()) {
         status = 'Game over! Stalemate.';
         showGameOver(status);
-        return;
-    } else if (game.in_check()) {
-        status = `${moveColor} is in check.`;
     } else {
-        status = `${moveColor} to move.`;
+        status = `${game.turn() === 'w' ? 'White' : 'Black'} to move`;
+        if (game.in_check()) status += ' (check)';
     }
-
     document.getElementById('status').innerHTML = status;
 }
 
-// Show game over UI and trigger file download on checkmate
 function showGameOver(text) {
     document.getElementById('gameOverText').innerHTML = text;
     document.getElementById('gameOver').style.display = 'block';
-    isHumanTurn = false;
-
-    if (text.includes('checkmate')) {
-        setTimeout(generateAndDownloadCommandFile, 1000);
-    }
+    updateUndo(); // Disable undo on game over
 }
 
-// AI makes a random legal move
 function makeAITurn() {
     if (game.game_over()) return;
-    let possibleMoves = game.moves();
-    if (possibleMoves.length === 0) return;
-    let randomIdx = Math.floor(Math.random() * possibleMoves.length);
-    let move = game.move(possibleMoves[randomIdx]);
-    console.log('AI moved:', move.san);
+    const moves = game.moves();
+    const randomMove = moves[Math.floor(Math.random() * moves.length)];
+    game.move(randomMove);
+    addToHistory(randomMove);
     board.position(game.fen());
-    localStorage.setItem('chessGameFen', game.fen());
-    updateSquareStyles();
+    updateMoveHistory();
     updateStatus();
     isHumanTurn = true;
+    updateUndo();
 }
 
-// Reset the game
 function resetGame() {
     game.reset();
     board.start();
     isHumanTurn = true;
-    localStorage.setItem('chessGameFen', game.fen());
-    document.getElementById('status').innerHTML = 'White to move.';
+    moveHistory = [];
+    historyIndex = 0;
+    selectedSquare = null;
+    pendingPromotion = null;
     document.getElementById('gameOver').style.display = 'none';
     document.getElementById('promotionModal').style.display = 'none';
-    clearHighlight();
-    updateSquareStyles();
+    clearHighlights();
     updateStatus();
+    updateMoveHistory();
+    updateUndo();
 }
 
-// Initialize on load
-window.onload = function() {
-    initBoard();
-};
+function updateTheme() {
+    document.body.classList.toggle('dark', document.getElementById('darkTheme').checked);
+}
+
+window.onload = initBoard;
