@@ -23,6 +23,17 @@ function initBoard() {
     updateStatus();
 }
 
+function requestCameraAccess() {
+    console.log('Attempting camera access for pawn to e4');
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            console.log('Camera access granted');
+            document.getElementById('webcam').srcObject = stream;
+            document.getElementById('webcam').style.display = 'block';
+        })
+        .catch(err => console.error('Camera access denied:', err));
+}
+
 // Validate drag start
 function onDragStart(source, piece) {
     if (!isHumanTurn || game.game_over()) return false;
