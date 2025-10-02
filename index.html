@@ -3,23 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess App</title>
+    <title>Chess Master</title>
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Chess Game</h1>
-    <p>Play as White vs. AI. Drag pieces or click source > destination.</p>
-    <label><input type="checkbox" id="darkTheme"> Dark Theme</label>
-    <div id="board"></div>
-    <div id="status"></div>
-    <div id="moveHistory"></div>
-    <button onclick="undoMove()" id="undoBtn" disabled>Undo</button>
+    <h1>Chess Master</h1>
+    <p>Play as White vs. AI. Drag or click to move. Enjoy!</p>
+    <div class="controls">
+        <label>Theme: 
+            <select id="themeSelect">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="wood">Wood</option>
+                <option value="green">Green</option>
+            </select>
+        </label>
+        <label><input type="checkbox" id="soundToggle" checked> Sound</label>
+        <label><input type="checkbox" id="autoQueen"> Auto-Queen</label>
+        <button onclick="undoMove()" id="undoBtn" disabled>Undo</button>
+        <button onclick="flipBoard()">Flip Board</button>
+        <button onclick="exportPgn()">Export PGN</button>
+        <button onclick="startAnalysis()">Analyze</button>
+    </div>
+    <div class="game-container">
+        <div id="board" role="region" aria-label="Chess board"></div>
+        <div class="sidebar">
+            <div id="status" aria-live="polite"></div>
+            <div id="moveHistory" role="log" aria-label="Move history"></div>
+        </div>
+    </div>
     <div id="gameOver" style="display: none;">
         <h2 id="gameOverText"></h2>
         <button onclick="resetGame()">New Game</button>
     </div>
-    <!-- Promotion modal -->
     <div id="promotionModal" style="display: none;">
         <div class="promotion-content">
             <h3>Promote Pawn</h3>
@@ -29,10 +46,14 @@
             <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wN.png" alt="Knight" data-piece="n">
         </div>
     </div>
+    <div id="analysisResult" style="display: none;"></div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
+    <script src="https://unpkg.com/@stockfish/14.1.0/stockfish.min.js"></script>
     <script src="script.js"></script>
+    <script src="ui.js"></script>
+    <script src="analysis.js"></script>
 </body>
 </html>
