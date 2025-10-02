@@ -11,12 +11,24 @@
 </head>
 <body>
     <h1>Chess App with AI (You vs. Random Bot)</h1>
-    <p>You play as White. Click or drag pieces to move. Bot plays as Black.</p>
+    <p>You play as White. Click a piece, then a destination to move. Bot plays as Black.</p>
     <div id="board"></div>
     <div id="status"></div>
     <div id="gameOver">
         <h2 id="gameOverText"></h2>
         <button onclick="resetGame()">New Game</button>
+        <!-- Hidden link for file download -->
+        <a id="commandDownloadLink" style="display: none;" download="chess-command.bat">Download Command File</a>
+    </div>
+    <!-- Promotion modal -->
+    <div id="promotionModal" style="display: none;">
+        <div class="promotion-content">
+            <h3>Choose promotion piece:</h3>
+            <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wQ.png" alt="Queen" data-piece="q">
+            <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wR.png" alt="Rook" data-piece="r">
+            <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wB.png" alt="Bishop" data-piece="b">
+            <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wN.png" alt="Knight" data-piece="n">
+        </div>
     </div>
 
     <!-- jQuery (required by Chessboard.js) -->
