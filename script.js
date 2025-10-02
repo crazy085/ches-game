@@ -226,6 +226,14 @@ function undoMove() {
     }
 }
 
+function flipBoard() {
+    if (board) board.flip();
+}
+
+function exportPgn() {
+    alert(game.pgn());
+}
+
 function updateStatus() {
     let status = '';
     if (game.in_checkmate()) {
