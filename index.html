@@ -3,27 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess App with AI</title>
-    <!-- Chessboard.js CSS -->
+    <title>Chess App</title>
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Chess App with AI (You vs. Random Bot)</h1>
-    <p>You play as White. Click a piece, then a destination to move. Bot plays as Black.</p>
+    <h1>Chess Game</h1>
+    <p>Play as White vs. AI. Drag pieces or click source > destination.</p>
+    <label><input type="checkbox" id="darkTheme"> Dark Theme</label>
     <div id="board"></div>
     <div id="status"></div>
-    <div id="gameOver">
+    <div id="moveHistory"></div>
+    <button onclick="undoMove()" id="undoBtn" disabled>Undo</button>
+    <div id="gameOver" style="display: none;">
         <h2 id="gameOverText"></h2>
         <button onclick="resetGame()">New Game</button>
-        <!-- Hidden link for file download -->
-        <a id="commandDownloadLink" style="display: none;" download="chess-command.bat">Download Command File</a>
     </div>
     <!-- Promotion modal -->
     <div id="promotionModal" style="display: none;">
         <div class="promotion-content">
-            <h3>Choose promotion piece:</h3>
+            <h3>Promote Pawn</h3>
             <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wQ.png" alt="Queen" data-piece="q">
             <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wR.png" alt="Rook" data-piece="r">
             <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wB.png" alt="Bishop" data-piece="b">
@@ -31,13 +30,9 @@
         </div>
     </div>
 
-    <!-- jQuery (required by Chessboard.js) -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <!-- Chessboard.js -->
     <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
-    <!-- Chess.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
-    <!-- Custom JS -->
     <script src="script.js"></script>
 </body>
 </html>
