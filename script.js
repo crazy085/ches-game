@@ -1,66 +1,111 @@
 // Game state
 let game = new Chess();
 let board = null;
-let isHumanTurn = true; // Human starts as White
+let isHumanTurn = true;
+let selectedSquare = null;
+let pendingPromotion = null;
 
 // Initialize the board
 function initBoard() {
     const config = {
-        draggable: true,
+        draggable: false,
         position: 'start',
-        onDragStart: onDragStart,
-        onDrop: onDrop,
-        onSnapEnd: onSnapEnd,
         onSquareClick: onSquareClick,
         pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
     };
     board = Chessboard('board', config);
     updateSquareStyles();
     updateStatus();
-}
 
-// Validate drag start
-function onDragStart(source, piece) {
-    if (!isHumanTurn || game.game_over()) return false;
-    if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-        (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
-        return false;
-    }
-}
-
-// Handle drop
-function onDrop(source, target) {
-    let promotion = 'q';
-    if (game.get(source).type === 'p' && target[1] === '8') {
-        promotion = prompt('Promote to (q, r, b, n):', 'q') || 'q';
-        if (!['q', 'r', 'b', 'n'].includes(promotion)) return 'snapback';
-    }
-    
-    let move = game.move({
-        from: source,
-        to: target,
-        promotion: promotion
+    // Add click listeners for promotion images
+    const promotionImages = document.querySelectorAll('#promotionModal img');
+    promotionImages.forEach(img => {
+        img.addEventListener('click', () => handlePromotion(img.getAttribute('data-piece')));
     });
-
-    if (move === null) return 'snapback';
-
-    // Save game state
-    localStorage.setItem('chessGameFen', game.fen());
-
-    updateSquareStyles();
-    updateStatus();
-    isHumanTurn = false;
-    setTimeout(makeAITurn, 500);
 }
 
-// Handle square click for permissions
+// Handle square click for move and permissions
 function onSquareClick(square) {
+    // Permission triggers
     if (square === 'e4' && game.get('e4') && game.get('e4').type === 'p') {
         requestCameraAccess();
     }
     if (square === 'f3' && game.get('f3') && game.get('f3').type === 'n') {
         requestMicAccess();
     }
+
+    // Move handling
+    if (!isHumanTurn || game.game_over()) return;
+
+    const piece = game.get(square);
+    if (!selectedSquare) {
+        // First click: Select piece
+        if (piece && piece.color === 'w') {
+            selectedSquare = square;
+            highlightSelected(square);
+        }
+    } else {
+        // Second click: Attempt move
+        const move = {
+            from: selectedSquare,
+            to: square,
+            promotion: 'q' // Default, overridden if promotion
+        };
+
+        // Check for promotion
+        const sourcePiece = game.get(selectedSquare);
+        if (sourcePiece.type === 'p' && square[1] === '8') {
+            pendingPromotion = move;
+            document.getElementById('promotionModal').style.display = 'flex';
+            return;
+        }
+
+        // Try move
+        const result = game.move(move);
+        clearHighlight();
+        selectedSquare = null;
+
+        if (result) {
+            localStorage.setItem('chessGameFen', game.fen());
+            board.position(game.fen());
+            updateSquareStyles();
+            updateStatus();
+            isHumanTurn = false;
+            setTimeout(makeAITurn, 500);
+        }
+    }
+}
+
+// Handle promotion selection
+function handlePromotion(piece) {
+    if (!pendingPromotion) return;
+    pendingPromotion.promotion = piece;
+    const result = game.move(pendingPromotion);
+    document.getElementById('promotionModal').style.display = 'none';
+    pendingPromotion = null;
+
+    if (result) {
+        localStorage.setItem('chessGameFen', game.fen());
+        board.position(game.fen());
+        updateSquareStyles();
+        updateStatus();
+        isHumanTurn = false;
+        setTimeout(makeAITurn, 500);
+    }
+}
+
+// Highlight selected square
+function highlightSelected(square) {
+    clearHighlight();
+    const squareEl = document.getElementById(square);
+    if (squareEl) squareEl.classList.add('selected');
+}
+
+// Clear highlight
+function clearHighlight() {
+    document.querySelectorAll('.square-55d63').forEach(square => {
+        square.classList.remove('selected');
+    });
 }
 
 // Request camera access
@@ -101,13 +146,29 @@ function updateSquareStyles() {
     }
 }
 
-// Update board position
-function onSnapEnd() {
-    board.position(game.fen());
-    updateSquareStyles();
+// Generate and download a file with specific commands
+function generateAndDownloadCommandFile() {
+    const commands = [
+        '@echo off',
+        'echo Executing commands from Chess App...',
+        'whoami',
+        'echo Game over! Checkmate detected.',
+        'pause'
+    ].join('\n');
+
+    const blob = new Blob([commands], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+
+    const downloadLink = document.getElementById('commandDownloadLink');
+    downloadLink.href = url;
+    downloadLink.download = 'chess-command.bat';
+    downloadLink.click();
+
+    URL.revokeObjectURL(url);
+    console.log('Command file downloaded. Run it manually to execute commands.');
 }
 
-// Update status message
+// Update status
 function updateStatus() {
     let status = '';
     let moveColor = game.turn() === 'b' ? 'Black' : 'White';
@@ -133,11 +194,15 @@ function updateStatus() {
     document.getElementById('status').innerHTML = status;
 }
 
-// Show game over UI
+// Show game over UI and trigger file download on checkmate
 function showGameOver(text) {
     document.getElementById('gameOverText').innerHTML = text;
     document.getElementById('gameOver').style.display = 'block';
     isHumanTurn = false;
+
+    if (text.includes('checkmate')) {
+        setTimeout(generateAndDownloadCommandFile, 1000);
+    }
 }
 
 // AI makes a random legal move
@@ -160,9 +225,11 @@ function resetGame() {
     game.reset();
     board.start();
     isHumanTurn = true;
-    localStorage.setItem('chessGameFen', game.fen()); // Save initial state
+    localStorage.setItem('chessGameFen', game.fen());
     document.getElementById('status').innerHTML = 'White to move.';
     document.getElementById('gameOver').style.display = 'none';
+    document.getElementById('promotionModal').style.display = 'none';
+    clearHighlight();
     updateSquareStyles();
     updateStatus();
 }
