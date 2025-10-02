@@ -6,33 +6,50 @@ body {
     background-color: #f0f0f0;
     margin: 0;
     padding: 20px;
+    transition: background 0.3s;
 }
+body.dark { background-color: #333; color: #fff; }
+body.wood { background-color: #8b4513; color: #fff; }
+body.green { background-color: #2e7d32; color: #fff; }
 h1 { color: #333; }
+body.dark h1, body.wood h1, body.green h1 { color: #fff; }
 p { text-align: center; color: #666; }
+body.dark p, body.wood p, body.green p { color: #ddd; }
 .controls {
     display: flex;
     gap: 10px;
     margin-bottom: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
-.controls input, .controls button {
+.controls select, .controls input, .controls button {
     padding: 8px;
     font-size: 14px;
     border-radius: 4px;
     border: 1px solid #ccc;
 }
-.controls button {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
+.controls button { background: #4CAF50; color: white; border: none; cursor: pointer; }
 .controls button:hover { background: #45a049; }
+.controls button:disabled { background: #ccc; cursor: not-allowed; }
+.game-container {
+    display: flex;
+    gap: 20px;
+    max-width: 800px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
 #board {
     border: 2px solid #333;
     width: 400px;
     height: 400px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    position: relative;
+    touch-action: none; /* Prevent page scroll on touch/drag */
+    -webkit-touch-callout: none; /* iOS: Prevent callout on long press */
+    -webkit-user-select: none; /* iOS: Prevent selection */
+    user-select: none; /* General: Prevent text selection */
 }
+body.dark #board, body.wood #board, body.green #board { border-color: #fff; }
 #status {
     margin-top: 10px;
     font-size: 18px;
@@ -40,8 +57,76 @@ p { text-align: center; color: #666; }
     text-align: center;
     color: #333;
 }
-@media (max-width: 600px) {
+body.dark #status, body.wood #status, body.green #status { color: #fff; }
+.sidebar { flex: 1; max-width: 300px; }
+#moveHistory {
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 4px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+body.dark #moveHistory, body.wood #moveHistory, body.green #moveHistory { background: #444; border-color: #666; }
+#moveHistory ul { margin: 0; padding-left: 20px; }
+#moveHistory li { cursor: pointer; padding: 2px; }
+#moveHistory li:hover { background: #f0f0f0; }
+body.dark #moveHistory li:hover, body.wood #moveHistory li:hover, body.green #moveHistory li:hover { background: #555; }
+#gameOver {
+    margin-top: 20px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    text-align: center;
+}
+body.dark #gameOver, body.wood #gameOver, body.green #gameOver { background: #444; border-color: #666; }
+#gameOver h2 { color: #d32f2f; margin-bottom: 10px; }
+button { padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+button:hover { background: #45a049; }
+.square-55d63.selected { box-shadow: inset 0 0 0 3px #ffeb3b; animation: pulse 0.5s infinite; }
+.square-55d63.highlight-legal { background-color: rgba(76, 175, 80, 0.5) !important; }
+@keyframes pulse { 0% { box-shadow: inset 0 0 0 3px #ffeb3b; } 50% { box-shadow: inset 0 0 0 5px #ffeb3b; } 100% { box-shadow: inset 0 0 0 3px #ffeb3b; } }
+.piece-417db { transition: transform 0.2s; }
+.piece-417db.captured { animation: capture 0.3s; }
+@keyframes capture { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(0); } }
+#promotionModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.promotion-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+body.dark .promotion-content, body.wood .promotion-content, body.green .promotion-content { background: #444; }
+.promotion-content img {
+    width: 50px;
+    margin: 10px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.promotion-content img:hover { transform: scale(1.1); }
+.board-coordinates {
+    position: absolute;
+    font-size: 12px;
+    color: #333;
+    pointer-events: none; /* Prevent clicks on coordinates */
+}
+body.dark .board-coordinates, body.wood .board-coordinates, body.green .board-coordinates { color: #fff; }
+@media (max-width: 700px) {
+    .game-container { flex-direction: column; }
     #board { width: 300px; height: 300px; }
     h1 { font-size: 24px; }
     p { font-size: 14px; }
+    .promotion-content img { width: 40px; margin: 5px; }
 }
