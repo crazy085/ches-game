@@ -201,9 +201,9 @@ function removeGreySquares() {
 function playSound(move) {
     if (!document.getElementById('soundToggle').checked) return;
     try {
-        let soundUrl = 'https://cdn.pixabay.com/audio/2022/05/26/audio_4f6f7d6b84.mp3';
-        if (move && move.captured) soundUrl = 'https://cdn.pixabay.com/audio/2022/05/26/audio_4f6f7d6b84.mp3';
-        else if (game.in_check()) soundUrl = 'https://cdn.pixabay.com/audio/2022/05/26/audio_4f6f7d6b84.mp3';
+        let soundUrl = '/sounds/move.wav';
+        if (move && move.captured) soundUrl = '/sounds/capture.wav';
+        else if (game.in_check()) soundUrl = '/sounds/check.wav';
         const audio = new Audio(soundUrl);
         audio.volume = 0.3;
         audio.play().catch(err => console.error('Sound error:', err));
