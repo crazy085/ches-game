@@ -3,6 +3,10 @@ let board = null;
 let isHumanTurn = true;
 let moveHistory = [];
 let historyIndex = 0;
+let fenHistory = ['rnbqkbnr/pppppppp/5n1b/4p3/4P3/5N1B/PPPP1PPP/RNBQK2R w KQkq e4 0 1'];
+let selectedSquare = null;
+let pendingPromotion = null;
+let premove = null;
 
 function initBoard() {
     const config = {
@@ -17,15 +21,7 @@ function initBoard() {
     board = Chessboard('board', config);
     updateStatus();
     updateMoveHistory();
-    updateTheme();
-
-    // Theme toggle
-    document.getElementById('darkTheme').addEventListener('change', updateTheme);
-
-    // Promotion listeners
-    document.querySelectorAll('#promotionModal img').forEach(img => {
-        img.addEventListener('click', () => handlePromotion(img.dataset.piece));
-    });
+    addCoordinates();
 }
 
 function onDragStart(source, piece) {
@@ -39,13 +35,14 @@ function onDragStart(source, piece) {
 function onDrop(source, target) {
     removeGreySquares();
     const piece = game.get(source);
-    if (piece.type === 'p' && target[1] === '8') {
+    if (piece.type === 'p' && target[1] === '8' && !document.getElementById('autoQueen').checked) {
         pendingPromotion = { from: source, to: target };
         document.getElementById('promotionModal').style.display = 'flex';
         return 'snapback';
     }
     let move = game.move({ from: source, to: target, promotion: 'q' });
     if (move === null) return 'snapback';
+    playSound(move);
     addToHistory(move);
     board.position(game.fen());
     updateStatus();
@@ -55,6 +52,10 @@ function onDrop(source, target) {
 }
 
 function onSquareClick(square) {
+    if (!isHumanTurn && premove) {
+        premove.to = square;
+        return;
+    }
     if (!isHumanTurn || game.game_over()) return;
     const piece = game.get(square);
     if (!selectedSquare) {
@@ -68,7 +69,7 @@ function onSquareClick(square) {
         selectedSquare = null;
     } else {
         const sourcePiece = game.get(selectedSquare);
-        if (sourcePiece.type === 'p' && square[1] === '8') {
+        if (sourcePiece.type === 'p' && square[1] === '8' && !document.getElementById('autoQueen').checked) {
             pendingPromotion = { from: selectedSquare, to: square };
             document.getElementById('promotionModal').style.display = 'flex';
             clearHighlights();
@@ -78,6 +79,7 @@ function onSquareClick(square) {
         clearHighlights();
         selectedSquare = null;
         if (move) {
+            playSound(move);
             addToHistory(move);
             board.position(game.fen());
             updateStatus();
@@ -88,15 +90,13 @@ function onSquareClick(square) {
     }
 }
 
-let pendingPromotion = null;
-let selectedSquare = null;
-
 function handlePromotion(piece) {
     if (!pendingPromotion) return;
     let move = game.move({ ...pendingPromotion, promotion: piece });
     document.getElementById('promotionModal').style.display = 'none';
     pendingPromotion = null;
     if (move) {
+        playSound(move);
         addToHistory(move);
         board.position(game.fen());
         updateStatus();
@@ -130,6 +130,7 @@ function removeGreySquares() {
 
 function addToHistory(move) {
     moveHistory.push(move.san);
+    fenHistory.push(game.fen());
     historyIndex = moveHistory.length;
     updateMoveHistory();
 }
@@ -147,12 +148,17 @@ function updateMoveHistory() {
 }
 
 function goToMove(index) {
-    // Navigate to move (simplified; full replay would load FEN states)
-    console.log('Navigate to move', index);
+    const targetIndex = (index + 1) * 2 - 1;
+    if (targetIndex >= fenHistory.length - 1) return;
+    game.load(fenHistory[targetIndex]);
+    board.position(game.fen());
+    isHumanTurn = true;
+    updateStatus();
+    updateUndo();
 }
 
 function updateUndo() {
-    document.getElementById('undoBtn').disabled = !isHumanTurn || historyIndex <= 1;
+    document.getElementById('undoBtn').disabled = !isHumanTurn || historyIndex <= 1 || game.game_over();
 }
 
 function undoMove() {
@@ -161,6 +167,7 @@ function undoMove() {
         game.undo();
         historyIndex -= 2;
         moveHistory.splice(-2);
+        fenHistory.splice(-2);
         board.position(game.fen());
         isHumanTurn = true;
         updateMoveHistory();
@@ -190,7 +197,6 @@ function updateStatus() {
 function showGameOver(text) {
     document.getElementById('gameOverText').innerHTML = text;
     document.getElementById('gameOver').style.display = 'block';
-    updateUndo(); // Disable undo on game over
 }
 
 function makeAITurn() {
@@ -198,12 +204,69 @@ function makeAITurn() {
     const moves = game.moves();
     const randomMove = moves[Math.floor(Math.random() * moves.length)];
     game.move(randomMove);
+    playSound({ captured: game.get(randomMove.to) });
     addToHistory(randomMove);
     board.position(game.fen());
     updateMoveHistory();
     updateStatus();
     isHumanTurn = true;
     updateUndo();
+    if (premove) {
+        let move = game.move(premove);
+        if (move) {
+            playSound(move);
+            addToHistory(move);
+            board.position(game.fen());
+            updateMoveHistory();
+            updateStatus();
+            isHumanTurn = false;
+            premove = null;
+            setTimeout(makeAITurn, 500);
+        } else {
+            premove = null;
+        }
+    }
+}
+
+function setPremove(from, to) {
+    premove = { from, to, promotion: 'q' };
+}
+
+function flipBoard() {
+    board.flip();
+}
+
+function exportPgn() {
+    const pgn = game.pgn();
+    const blob = new Blob([pgn], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'game.pgn';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function addCoordinates() {
+    const boardEl = document.getElementById('board');
+    for (let i = 1; i <= 8; i++) {
+        const rank = document.createElement('div');
+        rank.className = 'board-coordinates';
+        rank.style.position = 'absolute';
+        rank.style.left = '-20px';
+        rank.style.top = `${(8 - i) * 50}px`;
+        rank.textContent = i;
+        boardEl.appendChild(rank);
+    }
+    for (let i = 0; i < 8; i++) {
+        const file = document.createElement('div');
+        file.className = 'board-coordinates';
+        file.style.position = 'absolute';
+        file.style.left = `${i * 50 + 25}px`;
+        file.style.top = '400px';
+        file.textContent = String.fromCharCode(97 + i);
+        boardEl.appendChild(file);
+    }
 }
 
 function resetGame() {
@@ -211,19 +274,17 @@ function resetGame() {
     board.start();
     isHumanTurn = true;
     moveHistory = [];
+    fenHistory = [game.fen()];
     historyIndex = 0;
     selectedSquare = null;
     pendingPromotion = null;
+    premove = null;
     document.getElementById('gameOver').style.display = 'none';
     document.getElementById('promotionModal').style.display = 'none';
     clearHighlights();
     updateStatus();
     updateMoveHistory();
     updateUndo();
-}
-
-function updateTheme() {
-    document.body.classList.toggle('dark', document.getElementById('darkTheme').checked);
 }
 
 window.onload = initBoard;
