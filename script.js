@@ -33,9 +33,7 @@ function initBoard() {
     });
 }
 
-function onDragStart(source, piece, e) {
-    e.preventDefault(); // Prevent page scroll
-    e.stopPropagation(); // Stop event bubbling
+function onDragStart(source, piece, position, orientation) {
     if (!isHumanTurn || game.game_over()) return false;
     if (game.turn() === 'w' && piece.search(/^b/) !== -1) return false;
     const moves = game.moves({ square: source, verbose: true });
@@ -43,9 +41,7 @@ function onDragStart(source, piece, e) {
     return true;
 }
 
-function onDrop(source, target, piece, newPos, oldPos, orientation, e) {
-    e.preventDefault(); // Prevent page scroll on drop
-    e.stopPropagation();
+function onDrop(source, target, piece, newPos, oldPos, orientation) {
     removeGreySquares();
     const sourcePiece = game.get(source);
     if (sourcePiece.type === 'p' && target[1] === '8' && !document.getElementById('autoQueen').checked) {
