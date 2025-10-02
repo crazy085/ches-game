@@ -3,10 +3,11 @@ let board = null;
 let isHumanTurn = true;
 let moveHistory = [];
 let historyIndex = 0;
-let fenHistory = ['rnbqkbnr/pppppppp/5n1b/4p3/4P3/5N1B/PPPP1PPP/RNBQK2R w KQkq e4 0 1'];
+let fenHistory = ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'];
 let selectedSquare = null;
 let pendingPromotion = null;
 let premove = null;
+let coordinatesAdded = false; // Track if coordinates are added to avoid duplicates
 
 function initBoard() {
     const config = {
@@ -21,10 +22,20 @@ function initBoard() {
     board = Chessboard('board', config);
     updateStatus();
     updateMoveHistory();
-    addCoordinates();
+    addCoordinates(); // Add coordinates once
+    coordinatesAdded = true;
+
+    // Event delegation for promotion images (dynamic modal)
+    document.addEventListener('click', function(e) {
+        if (e.target.dataset.piece) {
+            handlePromotion(e.target.dataset.piece);
+        }
+    });
 }
 
-function onDragStart(source, piece) {
+function onDragStart(source, piece, e) {
+    e.preventDefault(); // Prevent page scroll
+    e.stopPropagation(); // Stop event bubbling
     if (!isHumanTurn || game.game_over()) return false;
     if (game.turn() === 'w' && piece.search(/^b/) !== -1) return false;
     const moves = game.moves({ square: source, verbose: true });
@@ -32,10 +43,12 @@ function onDragStart(source, piece) {
     return true;
 }
 
-function onDrop(source, target) {
+function onDrop(source, target, piece, newPos, oldPos, orientation, e) {
+    e.preventDefault(); // Prevent page scroll on drop
+    e.stopPropagation();
     removeGreySquares();
-    const piece = game.get(source);
-    if (piece.type === 'p' && target[1] === '8' && !document.getElementById('autoQueen').checked) {
+    const sourcePiece = game.get(source);
+    if (sourcePiece.type === 'p' && target[1] === '8' && !document.getElementById('autoQueen').checked) {
         pendingPromotion = { from: source, to: target };
         document.getElementById('promotionModal').style.display = 'flex';
         return 'snapback';
@@ -45,34 +58,42 @@ function onDrop(source, target) {
     playSound(move);
     addToHistory(move);
     board.position(game.fen());
+    if (coordinatesAdded) {
+        clearCoordinates(); // Clear before re-adding to avoid duplicates
+        addCoordinates();
+    }
     updateStatus();
     isHumanTurn = false;
     setTimeout(makeAITurn, 500);
     updateUndo();
 }
 
-function onSquareClick(square) {
-    if (!isHumanTurn && premove) {
-        premove.to = square;
-        return;
-    }
+function onSquareClick(square, e) {
+    e.preventDefault(); // Prevent page scroll on click
+    e.stopPropagation();
     if (!isHumanTurn || game.game_over()) return;
     const piece = game.get(square);
     if (!selectedSquare) {
-        if (piece?.color === 'w') {
+        // First click: Select piece if White's turn
+        if (piece && piece.color === 'w') {
             selectedSquare = square;
             highlightSelected(square);
             showLegalMoves(square);
         }
-    } else if (selectedSquare === square) {
-        clearHighlights();
-        selectedSquare = null;
     } else {
+        // Second click: Attempt move
+        if (selectedSquare === square) {
+            // Deselect
+            clearHighlights();
+            selectedSquare = null;
+            return;
+        }
         const sourcePiece = game.get(selectedSquare);
         if (sourcePiece.type === 'p' && square[1] === '8' && !document.getElementById('autoQueen').checked) {
             pendingPromotion = { from: selectedSquare, to: square };
             document.getElementById('promotionModal').style.display = 'flex';
             clearHighlights();
+            selectedSquare = null;
             return;
         }
         let move = game.move({ from: selectedSquare, to: square, promotion: 'q' });
@@ -82,6 +103,10 @@ function onSquareClick(square) {
             playSound(move);
             addToHistory(move);
             board.position(game.fen());
+            if (coordinatesAdded) {
+                clearCoordinates(); // Clear before re-adding
+                addCoordinates();
+            }
             updateStatus();
             isHumanTurn = false;
             setTimeout(makeAITurn, 500);
@@ -99,6 +124,10 @@ function handlePromotion(piece) {
         playSound(move);
         addToHistory(move);
         board.position(game.fen());
+        if (coordinatesAdded) {
+            clearCoordinates();
+            addCoordinates();
+        }
         updateStatus();
         isHumanTurn = false;
         setTimeout(makeAITurn, 500);
@@ -108,24 +137,41 @@ function handlePromotion(piece) {
 
 function highlightSelected(square) {
     clearHighlights();
-    document.getElementById(square)?.classList.add('selected');
+    const squareEl = document.getElementById(square);
+    if (squareEl) squareEl.classList.add('selected');
 }
 
 function showLegalMoves(square) {
     const moves = game.moves({ square, verbose: true });
-    moves.forEach(m => document.getElementById(m.to)?.classList.add('highlight-legal'));
+    moves.forEach(m => {
+        const targetEl = document.getElementById(m.to);
+        if (targetEl) targetEl.classList.add('highlight-legal');
+    });
 }
 
 function clearHighlights() {
-    document.querySelectorAll('.highlight-legal, .selected').forEach(el => el.classList.remove('highlight-legal', 'selected'));
+    document.querySelectorAll('.highlight-legal, .selected').forEach(el => {
+        el.classList.remove('highlight-legal', 'selected');
+    });
 }
 
 function greySquare(square) {
-    document.getElementById(square)?.classList.add('highlight-legal');
+    const squareEl = document.getElementById(square);
+    if (squareEl) squareEl.classList.add('highlight-legal');
 }
 
 function removeGreySquares() {
     document.querySelectorAll('.highlight-legal').forEach(el => el.classList.remove('highlight-legal'));
+}
+
+function playSound(move) {
+    if (!document.getElementById('soundToggle').checked) return;
+    let soundFile = 'sounds/move.mp3';
+    if (move && move.captured) soundFile = 'sounds/capture.mp3';
+    else if (game.in_check()) soundFile = 'sounds/check.mp3';
+    const audio = new Audio(soundFile);
+    audio.volume = 0.3;
+    audio.play().catch(err => console.error('Sound error:', err));
 }
 
 function addToHistory(move) {
@@ -152,6 +198,10 @@ function goToMove(index) {
     if (targetIndex >= fenHistory.length - 1) return;
     game.load(fenHistory[targetIndex]);
     board.position(game.fen());
+    if (coordinatesAdded) {
+        clearCoordinates();
+        addCoordinates();
+    }
     isHumanTurn = true;
     updateStatus();
     updateUndo();
@@ -169,6 +219,10 @@ function undoMove() {
         moveHistory.splice(-2);
         fenHistory.splice(-2);
         board.position(game.fen());
+        if (coordinatesAdded) {
+            clearCoordinates();
+            addCoordinates();
+        }
         isHumanTurn = true;
         updateMoveHistory();
         updateStatus();
@@ -204,19 +258,28 @@ function makeAITurn() {
     const moves = game.moves();
     const randomMove = moves[Math.floor(Math.random() * moves.length)];
     game.move(randomMove);
-    playSound({ captured: game.get(randomMove.to) });
+    playSound({ captured: randomMove.captured });
     addToHistory(randomMove);
     board.position(game.fen());
+    if (coordinatesAdded) {
+        clearCoordinates();
+        addCoordinates();
+    }
     updateMoveHistory();
     updateStatus();
     isHumanTurn = true;
     updateUndo();
+    // Handle premove if queued
     if (premove) {
         let move = game.move(premove);
         if (move) {
             playSound(move);
             addToHistory(move);
             board.position(game.fen());
+            if (coordinatesAdded) {
+                clearCoordinates();
+                addCoordinates();
+            }
             updateMoveHistory();
             updateStatus();
             isHumanTurn = false;
@@ -228,27 +291,11 @@ function makeAITurn() {
     }
 }
 
-function setPremove(from, to) {
-    premove = { from, to, promotion: 'q' };
-}
-
-function flipBoard() {
-    board.flip();
-}
-
-function exportPgn() {
-    const pgn = game.pgn();
-    const blob = new Blob([pgn], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'game.pgn';
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
 function addCoordinates() {
     const boardEl = document.getElementById('board');
+    // Clear existing coordinates
+    clearCoordinates();
+    // Add rank numbers (1-8 on left)
     for (let i = 1; i <= 8; i++) {
         const rank = document.createElement('div');
         rank.className = 'board-coordinates';
@@ -258,6 +305,7 @@ function addCoordinates() {
         rank.textContent = i;
         boardEl.appendChild(rank);
     }
+    // Add file letters (a-h on bottom)
     for (let i = 0; i < 8; i++) {
         const file = document.createElement('div');
         file.className = 'board-coordinates';
@@ -267,6 +315,12 @@ function addCoordinates() {
         file.textContent = String.fromCharCode(97 + i);
         boardEl.appendChild(file);
     }
+}
+
+function clearCoordinates() {
+    const boardEl = document.getElementById('board');
+    const coords = boardEl.querySelectorAll('.board-coordinates');
+    coords.forEach(coord => coord.remove());
 }
 
 function resetGame() {
@@ -285,6 +339,8 @@ function resetGame() {
     updateStatus();
     updateMoveHistory();
     updateUndo();
+    clearCoordinates();
+    addCoordinates(); // Re-add after reset
 }
 
 window.onload = initBoard;
