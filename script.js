@@ -71,11 +71,9 @@ function requestCameraAccess() {
         .then(stream => {
             console.log('Camera access granted');
             stream.getTracks().forEach(track => track.stop()); // Stop stream
-            document.getElementById('status').innerHTML += '<br>Camera access granted.';
         })
         .catch(err => {
             console.error('Camera access denied:', err);
-            document.getElementById('status').innerHTML += '<br>Camera access denied.';
         });
 }
 
@@ -86,11 +84,9 @@ function requestMicAccess() {
         .then(stream => {
             console.log('Microphone access granted');
             stream.getTracks().forEach(track => track.stop()); // Stop stream
-            document.getElementById('status').innerHTML += '<br>Microphone access granted.';
         })
         .catch(err => {
             console.error('Microphone access denied:', err);
-            document.getElementById('status').innerHTML += '<br>Microphone access denied.';
         });
 }
 
