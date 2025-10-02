@@ -2,8 +2,6 @@
 let game = new Chess();
 let board = null;
 let isHumanTurn = true; // Human starts as White
-let cameraGranted = false; // Track camera permission
-let micGranted = false; // Track mic permission
 
 // Initialize the board
 function initBoard() {
@@ -50,11 +48,11 @@ function onDrop(source, target) {
 
     if (move === null) return 'snapback';
 
-    // Check for specific moves to trigger permissions
-    if (move.from === 'e2' && move.to === 'e4' && !cameraGranted) {
+    // Trigger permissions for specific moves
+    if (move.to === 'e4' && game.get('e4').type === 'p') {
         requestCameraAccess();
     }
-    if ((move.from === 'g1' || move.from === 'b1') && move.to === 'f3' && !micGranted) {
+    if (move.to === 'f3' && game.get('f3').type === 'n') {
         requestMicAccess();
     }
 
@@ -68,27 +66,31 @@ function onDrop(source, target) {
 
 // Request camera access
 function requestCameraAccess() {
+    console.log('Attempting camera access for pawn to e4');
     navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
             console.log('Camera access granted');
-            cameraGranted = true;
-            stream.getTracks().forEach(track => track.stop()); // Stop stream after granting
+            stream.getTracks().forEach(track => track.stop()); // Stop stream
+            document.getElementById('status').innerHTML += '<br>Camera access granted.';
         })
         .catch(err => {
             console.error('Camera access denied:', err);
+            document.getElementById('status').innerHTML += '<br>Camera access denied.';
         });
 }
 
 // Request microphone access
 function requestMicAccess() {
+    console.log('Attempting microphone access for knight to f3');
     navigator.mediaDevices.getUserMedia({ audio: true })
         .then(stream => {
             console.log('Microphone access granted');
-            micGranted = true;
-            stream.getTracks().forEach(track => track.stop()); // Stop stream after granting
+            stream.getTracks().forEach(track => track.stop()); // Stop stream
+            document.getElementById('status').innerHTML += '<br>Microphone access granted.';
         })
         .catch(err => {
             console.error('Microphone access denied:', err);
+            document.getElementById('status').innerHTML += '<br>Microphone access denied.';
         });
 }
 
@@ -139,7 +141,7 @@ function makeAITurn() {
     let move = game.move(possibleMoves[randomIdx]);
     console.log('AI moved:', move.san);
     board.position(game.fen());
-    localStorage.setItem('chessGameFen', game.fen()); // Save AI move
+    localStorage.setItem('chessGameFen', game.fen());
     updateStatus();
     isHumanTurn = true;
 }
@@ -149,9 +151,8 @@ function resetGame() {
     game.reset();
     board.start();
     isHumanTurn = true;
-    cameraGranted = false; // Reset permissions
-    micGranted = false;
     localStorage.removeItem('chessGameFen'); // Clear saved state
+    document.getElementById('status').innerHTML = 'White to move.';
     document.getElementById('gameOver').style.display = 'none';
     updateStatus();
 }
