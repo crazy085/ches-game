@@ -44,6 +44,10 @@ body.dark p, body.wood p, body.green p { color: #ddd; }
     height: 400px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     position: relative;
+    touch-action: none; /* Prevent page scroll on touch/drag */
+    -webkit-touch-callout: none; /* iOS: Prevent callout on long press */
+    -webkit-user-select: none; /* iOS: Prevent selection */
+    user-select: none; /* General: Prevent text selection */
 }
 body.dark #board, body.wood #board, body.green #board { border-color: #fff; }
 #status {
@@ -116,6 +120,7 @@ body.dark .promotion-content, body.wood .promotion-content, body.green .promotio
     position: absolute;
     font-size: 12px;
     color: #333;
+    pointer-events: none; /* Prevent clicks on coordinates */
 }
 body.dark .board-coordinates, body.wood .board-coordinates, body.green .board-coordinates { color: #fff; }
 @media (max-width: 700px) {
