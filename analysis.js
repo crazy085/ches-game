@@ -1,5 +1,6 @@
 function startAnalysis() {
-    const stockfish = new Worker('https://unpkg.com/@stockfish/14.1.0/stockfish.min.js');
+    // Use local copy of Stockfish (add stockfish.min.js to your repo!)
+    const stockfish = new Worker('stockfish.min.js');
     stockfish.postMessage('uci');
     stockfish.postMessage(`position fen ${game.fen()}`);
     stockfish.postMessage('go depth 10');
