@@ -2,8 +2,6 @@
 let game = new Chess();
 let board = null;
 let isHumanTurn = true; // Human starts as white
-let storageEnabled = false;
-let mediaStream = null; // For camera/mic if granted
 
 // Initialize the board
 function initBoard() {
@@ -17,7 +15,6 @@ function initBoard() {
     };
     board = Chessboard('board', config);
     updateStatus();
-    checkStoragePermission(); // Auto-check storage on load
 }
 
 // Validate drag start (only human's turn, own pieces)
@@ -42,9 +39,6 @@ function onDrop(source, target) {
     if (move === null) return 'snapback';
 
     updateStatus();
-    if (storageEnabled) {
-        saveGameState(); // Save after human move if storage enabled
-    }
     isHumanTurn = false; // Switch to AI turn
     setTimeout(makeAITurn, 500); // Delay for realism
 }
@@ -66,23 +60,14 @@ function updateStatus() {
     if (game.in_checkmate()) {
         status = `Game over! ${moveColor} is in checkmate.`;
         showGameOver(status);
-        if (storageEnabled) {
-            saveGameState(); // Save final state
-        }
         return;
     } else if (game.in_draw()) {
         status = 'Game over! Draw.';
         showGameOver(status);
-        if (storageEnabled) {
-            saveGameState();
-        }
         return;
     } else if (game.in_stalemate()) {
         status = 'Game over! Stalemate.';
         showGameOver(status);
-        if (storageEnabled) {
-            saveGameState();
-        }
         return;
     } else if (game.in_check()) {
         status = `${moveColor} is in check.`;
@@ -115,9 +100,6 @@ function makeAITurn() {
     // Update board
     board.position(game.fen());
     updateStatus();
-    if (storageEnabled) {
-        saveGameState(); // Save after AI move
-    }
     isHumanTurn = true; // Back to human
 }
 
@@ -128,106 +110,6 @@ function resetGame() {
     isHumanTurn = true;
     document.getElementById('gameOver').style.display = 'none';
     updateStatus();
-    if (storageEnabled) {
-        saveGameState(); // Save reset state
-    }
-}
-
-// Save current game state to localStorage (if enabled)
-function saveGameState() {
-    try {
-        localStorage.setItem('chessGameState', game.fen());
-        localStorage.setItem('chessMoveHistory', JSON.stringify(game.history()));
-        console.log('Game state saved!');
-    } catch (error) {
-        console.error('Failed to save game state:', error);
-        updatePermissionStatus('Storage save failed. Check quota.');
-    }
-}
-
-// Load game state from localStorage (example usage)
-function loadGameState() {
-    try {
-        const fen = localStorage.getItem('chessGameState');
-        if (fen) {
-            game.load(fen);
-            board.position(fen);
-            updateStatus();
-            console.log('Game state loaded!');
-        }
-    } catch (error) {
-        console.error('Failed to load game state:', error);
-    }
-}
-
-// Request storage persistence (allows unlimited localStorage in some browsers)
-async function requestStoragePermission() {
-    if ('storage' in navigator && 'persist' in navigator.storage) {
-        try {
-            const persistent = await navigator.storage.persist();
-            if (persistent) {
-                storageEnabled = true;
-                saveGameState(); // Test save
-                updatePermissionStatus('Storage access granted! Games will be saved automatically.');
-            } else {
-                updatePermissionStatus('Storage access denied. Using basic localStorage.');
-                storageEnabled = false; // Fallback to basic localStorage
-            }
-        } catch (error) {
-            console.error('Storage permission error:', error);
-            updatePermissionStatus('Storage request failed: ' + error.message);
-        }
-    } else {
-        // Fallback: Basic localStorage doesn't need permission
-        storageEnabled = true;
-        saveGameState();
-        updatePermissionStatus('Storage ready (no permission needed in this browser).');
-    }
-}
-
-// Auto-check storage on init (no prompt, just enable if possible)
-function checkStoragePermission() {
-    if (localStorage) {
-        storageEnabled = true;
-        updatePermissionStatus('Storage available (games can be saved).');
-    }
-}
-
-// Request camera and microphone permissions (for potential recording/voice features)
-async function requestMediaPermissions() {
-    try {
-        // Request camera
-        const cameraPermission = await navigator.permissions.query({ name: 'camera' });
-        if (cameraPermission.state === 'granted') {
-            updatePermissionStatus('Camera already granted.');
-        } else {
-            const stream = await navigator.mediaDevices.getUser Media({ video: true });
-            stream.getTracks().forEach(track => track.stop()); // Stop immediately after grant
-            updatePermissionStatus('Camera access granted (stream stopped).');
-        }
-
-        // Request microphone (separately or combined)
-        const micPermission = await navigator.permissions.query({ name: 'microphone' });
-        if (micPermission.state === 'granted') {
-            updatePermissionStatus('Microphone already granted.');
-        } else {
-            const audioStream = await navigator.mediaDevices.getUser Media({ audio: true });
-            audioStream.getTracks().forEach(track => track.stop()); // Stop immediately
-            updatePermissionStatus('Microphone access granted (stream stopped). Ready for voice features.');
-        }
-
-        // If you want to use the streams later, store them or reinitialize
-        // Example: mediaStream = await navigator.mediaDevices.getUser Media({ video: true, audio: true });
-
-    } catch (error) {
-        console.error('Media permission error:', error);
-        updatePermissionStatus('Media access denied or failed: ' + error.message + '. User denied or no HTTPS.');
-    }
-}
-
-// Update permission status display
-function updatePermissionStatus(message) {
-    document.getElementById('permissionStatus').innerHTML = `<p style="color: #666; font-size: 14px;">${message}</p>`;
 }
 
 // Initialize on load
