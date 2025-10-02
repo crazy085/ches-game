@@ -17,16 +17,6 @@ p {
     color: #666;
 }
 
-#moveHistory {
-    margin-top: 10px;
-    font-size: 16px;
-    max-width: 400px;
-    max-height: 100px;
-    overflow-y: auto;
-    text-align: center;
-    color: #333;
-}
-
 #board {
     border: 2px solid #333;
     width: 400px;
@@ -71,6 +61,13 @@ button {
 
 button:hover {
     background: #45a049;
+}
+
+/* Highlight e4/f3 when clickable for permissions */
+#e4.permission-active,
+#f3.permission-active {
+    background-color: rgba(76, 175, 80, 0.3) !important;
+    cursor: pointer;
 }
 
 @media (max-width: 500px) {
