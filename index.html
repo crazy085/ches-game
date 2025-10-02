@@ -12,6 +12,16 @@
 <body>
     <h1>Chess App with AI (You vs. Random Bot)</h1>
     <p>You play as White. Click or drag pieces to move. Bot plays as Black.</p>
+    
+    <!-- Optional Permissions Section -->
+    <div id="permissions" style="margin-bottom: 20px; text-align: center;">
+        <h3>Optional Features (Request Permissions)</h3>
+        <p>These enable saving games or future enhancements like voice commands.</p>
+        <button onclick="requestStoragePermission()">Enable Game Saving (Storage)</button>
+        <button onclick="requestMediaPermissions()">Enable Recording (Camera & Mic)</button>
+        <div id="permissionStatus"></div>
+    </div>
+    
     <div id="board" style="width: 400px"></div>
     <div id="status"></div>
     <div id="gameOver">
