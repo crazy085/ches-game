@@ -70,6 +70,38 @@ button:hover {
     cursor: pointer;
 }
 
+/* Promotion modal */
+#promotionModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.promotion-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.promotion-content img {
+    width: 50px;
+    margin: 10px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.promotion-content img:hover {
+    transform: scale(1.1);
+}
+
 @media (max-width: 500px) {
     #board {
         width: 300px;
@@ -82,5 +114,10 @@ button:hover {
     
     p {
         font-size: 14px;
+    }
+
+    .promotion-content img {
+        width: 40px;
+        margin: 5px;
     }
 }
