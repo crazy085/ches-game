@@ -3,57 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess Master</title>
-    <link rel="stylesheet" href="/css/chessboard-1.0.0.min.css" onerror="console.error('Failed to load Chessboard.js CSS')">
-    <link rel="stylesheet" href="/styles.css">
+    <title>Chess Game</title>
+    <link rel="stylesheet" href="./css/chessboard-1.0.0.min.css" onerror="console.error('Failed to load Chessboard.js CSS')">
+    <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-    <h1>Chess Master</h1>
-    <p>Play as White vs. AI. Drag or click to move. Enjoy!</p>
+    <h1>Chess Game</h1>
+    <p>Play as White vs. AI. Drag or click to move.</p>
     <div class="controls">
-        <div>
-            <label for="themeSelect">Theme: </label>
-            <select id="themeSelect">
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-                <option value="wood">Wood</option>
-                <option value="green">Green</option>
-            </select>
-        </div>
-        <div><input type="checkbox" id="soundToggle" checked> Sound</div>
-        <div><input type="checkbox" id="autoQueen" checked> Auto-Queen</div>
-        <button id="undoBtn" onclick="undoMove()" disabled>Undo</button>
-        <button onclick="board.flip()">Flip Board</button>
-        <button onclick="exportPGN()">Export PGN</button>
-        <button onclick="startAnalysis()">Analyze</button>
+        <input type="checkbox" id="soundToggle" checked> Sound
+        <button onclick="resetGame()">New Game</button>
     </div>
-    <div class="game-container">
-        <div id="board" style="width: 400px; height: 400px;"></div>
-        <div class="sidebar">
-            <div id="moveHistory"></div>
-            <div id="analysisResult" style="display: none; margin-top: 10px; font-size: 16px; color: #333;"></div>
-            <div id="gameOver" style="display: none;">
-                <h2 id="gameOverText"></h2>
-                <button onclick="resetGame()">New Game</button>
-            </div>
-        </div>
-    </div>
+    <div id="board" style="width: 400px;"></div>
     <div id="status">White to move</div>
-    <div id="promotionModal" style="display: none;">
-        <div class="promotion-content">
-            <h3>Promote Pawn</h3>
-            <img src="/img/wQ.png" data-piece="q" alt="Queen">
-            <img src="/img/wR.png" data-piece="r" alt="Rook">
-            <img src="/img/wB.png" data-piece="b" alt="Bishop">
-            <img src="/img/wN.png" data-piece="n" alt="Knight">
-        </div>
-    </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" onerror="console.error('Failed to load jQuery')"></script>
-    <script src="/js/chess.min.js" onerror="console.error('Failed to load Chess.js')"></script>
-    <script src="/js/chessboard-1.0.0.min.js" onerror="console.error('Failed to load Chessboard.js')"></script>
-    <script src="/script.js"></script>
-    <script src="/ui.js"></script>
-    <script src="/analysis.js"></script>
+    <script src="./js/chess.min.js" onerror="console.error('Failed to load Chess.js')"></script>
+    <script src="./js/chessboard-1.0.0.min.js" onerror="console.error('Failed to load Chessboard.js')"></script>
+    <script src="./script.js"></script>
 </body>
 </html>
