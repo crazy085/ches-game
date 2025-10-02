@@ -17,6 +17,16 @@ p {
     color: #666;
 }
 
+#moveHistory {
+    margin-top: 10px;
+    font-size: 16px;
+    max-width: 400px;
+    max-height: 100px;
+    overflow-y: auto;
+    text-align: center;
+    color: #333;
+}
+
 #board {
     border: 2px solid #333;
     width: 400px;
