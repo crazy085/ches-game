@@ -23,6 +23,16 @@ function initBoard() {
     updateStatus();
 }
 
+function updateMoveHistory() {
+    const history = game.history().reduce((acc, move, i) => {
+        if (i % 2 === 0) acc.push(`${Math.floor(i / 2) + 1}. ${move}`);
+        else acc[acc.length - 1] += ` ${move}`;
+        return acc;
+    }, []).join('<br>');
+    document.getElementById('moveHistory').innerHTML = history || 'No moves yet';
+}
+
+// Call in onDrop and makeAITurn
 function requestCameraAccess() {
     console.log('Attempting camera access for pawn to e4');
     navigator.mediaDevices.getUserMedia({ video: true })
