@@ -162,9 +162,9 @@ function removeGreySquares() {
 
 function playSound(move) {
     if (!document.getElementById('soundToggle').checked) return;
-    let soundFile = 'sounds/move.mp3';
-    if (move && move.captured) soundFile = 'sounds/capture.mp3';
-    else if (game.in_check()) soundFile = 'sounds/check.mp3';
+    let soundFile = 'sounds/move.wav';
+    if (move && move.captured) soundFile = 'sounds/capture.wav';
+    else if (game.in_check()) soundFile = 'sounds/check.wav';
     const audio = new Audio(soundFile);
     audio.volume = 0.3;
     audio.play().catch(err => console.error('Sound error:', err));
