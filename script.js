@@ -33,6 +33,23 @@ function initBoard() {
     });
 }
 
+// Assign IDs to squares if not already present (for highlighting/clicking)
+function assignSquareIds() {
+    const squares = document.querySelectorAll('.square-55d63');
+    const files = 'abcdefgh';
+    for (let rank = 1; rank <= 8; rank++) {
+        for (let file = 0; file < 8; file++) {
+            const squareId = files[file] + rank;
+            // squares are ordered from a8 to h1
+            const index = (8 - rank) * 8 + file;
+            const squareEl = squares[index];
+            if (squareEl && !squareEl.id) {
+                squareEl.id = squareId;
+            }
+        }
+    }
+}
+
 function onDragStart(source, piece, position, orientation) {
     if (!isHumanTurn || game.game_over()) return false;
     if (game.turn() === 'w' && piece.search(/^b/) !== -1) return false;
@@ -132,29 +149,35 @@ function handlePromotion(piece) {
     }
 }
 
+// Updated: add logging if element not found
 function highlightSelected(square) {
     clearHighlights();
     const squareEl = document.getElementById(square);
     if (squareEl) squareEl.classList.add('selected');
+    else console.warn('highlightSelected: No element for square', square);
 }
 
+// Updated: add logging if element not found
 function showLegalMoves(square) {
     const moves = game.moves({ square, verbose: true });
     moves.forEach(m => {
         const targetEl = document.getElementById(m.to);
         if (targetEl) targetEl.classList.add('highlight-legal');
+        else console.warn('showLegalMoves: No element for square', m.to);
     });
+}
+
+// Updated: add logging if element not found
+function greySquare(square) {
+    const squareEl = document.getElementById(square);
+    if (squareEl) squareEl.classList.add('highlight-legal');
+    else console.warn('greySquare: No element for square', square);
 }
 
 function clearHighlights() {
     document.querySelectorAll('.highlight-legal, .selected').forEach(el => {
         el.classList.remove('highlight-legal', 'selected');
     });
-}
-
-function greySquare(square) {
-    const squareEl = document.getElementById(square);
-    if (squareEl) squareEl.classList.add('highlight-legal');
 }
 
 function removeGreySquares() {
@@ -348,4 +371,8 @@ function resetGame() {
     addCoordinates(); // Re-add after reset
 }
 
-window.onload = initBoard;
+// Init board AND assign square ids
+window.onload = function() {
+    initBoard();
+    assignSquareIds();
+};
