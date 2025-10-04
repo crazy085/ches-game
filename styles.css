@@ -49,7 +49,6 @@ body.dark p, body.wood p, body.green p { color: #ddd; }
     -webkit-user-select: none; /* iOS: Prevent selection */
     user-select: none; /* General: Prevent text selection */
     overflow: hidden; /* Add this line */
-    }
 }
 body.dark #board, body.wood #board, body.green #board { border-color: #fff; }
 #status {
