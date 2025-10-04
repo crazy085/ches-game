@@ -1,36 +1,66 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="description" content="Lightweight chess web app with Stockfish engine" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <!-- CSP example (adjust to your needs) -->
-  <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'">
-  <title>Crazy085 Chess</title>
-
-  <!-- Favicons, fonts etc. -->
-  <link rel="icon" href="/favicon.ico" />
-  <link rel="stylesheet" href="styles.css" />
-
-  <!-- Load only required polyfills or libraries -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Master</title>
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main id="app" role="main">
-    <section id="board-wrapper" aria-label="Chess board">
-      <!-- chessboard container -->
-      <div id="board" tabindex="0" aria-label="Chessboard"></div>
-    </section>
+    <h1>Chess Master</h1>
+    <p>Play as White vs. AI. Drag or click to move. Enjoy!</p>
 
-    <aside id="controls" aria-label="Game controls">
-      <button id="newGameBtn">New game</button>
-      <button id="undoBtn">Undo</button>
-      <label for="difficulty">Difficulty</label>
-      <input id="difficulty" type="range" min="0" max="20" value="8" />
-    </aside>
-  </main>
+    <div class="controls">
+        <label>Theme: 
+            <select id="themeSelect">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="wood">Wood</option>
+                <option value="green">Green</option>
+            </select>
+        </label>
+        <label><input type="checkbox" id="soundToggle" checked> Sound</label>
+        <label><input type="checkbox" id="autoQueen"> Auto-Queen</label>
+        <button id="undoBtn" disabled>Undo</button>
+        <button id="flipBtn">Flip Board</button>
+        <button id="exportBtn">Export PGN</button>
+        <button id="analyzeBtn">Analyze</button>
+    </div>
 
-  <script type="module" src="script.js"></script>
+    <div class="game-container">
+        <div id="board" role="region" aria-label="Chess board"></div>
+        <div class="sidebar">
+            <div id="status" aria-live="polite"></div>
+            <div id="moveHistory" role="log" aria-label="Move history"></div>
+        </div>
+    </div>
+
+    <div id="gameOver" style="display: none;">
+        <h2 id="gameOverText"></h2>
+        <button id="resetBtn">New Game</button>
+    </div>
+
+    <div id="promotionModal" style="display: none;">
+        <div class="promotion-content">
+            <h3>Promote Pawn</h3>
+            <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wQ.png" alt="Queen" data-piece="q">
+            <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wR.png" alt="Rook" data-piece="r">
+            <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wB.png" alt="Bishop" data-piece="b">
+            <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wN.png" alt="Knight" data-piece="n">
+        </div>
+    </div>
+
+    <div id="analysisResult" style="display: none;"></div>
+
+    <!-- Libraries -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
+
+    <!-- Your JS Modules -->
+    <script type="module" src="script.js"></script>
+    <script type="module" src="ui.js"></script>
+    <script type="module" src="analysis.js"></script>
 </body>
 </html>
