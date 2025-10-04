@@ -1,6 +1,7 @@
 // script.js (ES Module)
-import { Chess } from "https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/esm/chess.js";
-// Remove Chessboard import!
+import { Chess } from './lib/chess.min.js'; // This will work if chess.min.js is ESM
+
+import { Chessboard } from './lib/chessboard.min.js';
 
 class AudioManager {
     constructor() {
