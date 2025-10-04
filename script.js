@@ -1,7 +1,7 @@
 // script.js (ES Module)
 import { Chess } from './lib/chess.min.js'; // This will work if chess.min.js is ESM
 
-import { Chessboard } from './lib/chessboard.min.js';
+this.board = Chessboard('board', config);
 
 class AudioManager {
     constructor() {
