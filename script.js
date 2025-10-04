@@ -65,6 +65,7 @@ function onDrop(source, target, piece, newPos, oldPos, orientation) {
 }
 
 function onSquareClick(square, e) {
+    console.log('Clicked square:', square, 'isHumanTurn:', isHumanTurn, 'game_over:', game.game_over());
     e.preventDefault(); // Prevent page scroll on click
     e.stopPropagation();
     if (!isHumanTurn || game.game_over()) return;
